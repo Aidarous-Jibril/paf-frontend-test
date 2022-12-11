@@ -1,54 +1,59 @@
-import React, { FC, ChangeEvent, useState, useRef, FormEvent, SetStateAction } from 'react'
+import React, { FC, ChangeEvent, useState, FormEvent, useEffect } from 'react'
 import './SearchForm.css'
-import { List as Props } from '../home/Home';
-import GameCard from '../gamecard/GameCard';
-
 
 interface IProps {
-    data: Props[],
-    // wordEntered: string,
-    // setWordEntered: React.Dispatch<SetStateAction<string>>,
-    // handleFilter: () => void
-    // setData:  React.Dispatch<React.SetStateAction<[]>>
+  handleFilter: (wordEntered: string) => void
 }
 
  
-const SearchForm: FC<IProps> = ({ data, }): JSX.Element => {
-  console.log(data)
-  const [filteredData, setFilteredData] = useState<Props[]>([]);
-  const [wordEntered, setWordEntered] = useState<string>("");
+const SearchForm: FC<IProps> = ({  handleFilter }): JSX.Element => {
+  const [wordEntered, setWordEntered] = useState<string>('');
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault()
+
+  //Get LS stored items and return
+  const getSearchHistoryFromStorage = () => {
+    const data = localStorage.getItem('searchTerm') ?? '[]';
+    if (data === null) return;
+
+    const searchData = JSON.parse(data) ?? [];
+
+    return searchData;
   }
 
-  const inputRef: React.RefObject<HTMLInputElement> =
-    useRef<HTMLInputElement>(null);
-  window.addEventListener("load", () => inputRef.current?.focus());
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setWordEntered(e.target.value);
+  }
 
-  const handleFilter = ({
-    target,
-  }: ChangeEvent<HTMLInputElement>): void => {
-    const searchWord: string = target.value.toLowerCase();
-    setWordEntered(searchWord);
+  //Submit function
+  const handleSubmit = (e: FormEvent<HTMLElement>) => {
+    e.preventDefault()
+    handleFilter(wordEntered)
 
-    const newFilter: Props[] = data.filter(({ title }): boolean =>
-      title.toLowerCase().includes(searchWord)
-    );
+    const data = getSearchHistoryFromStorage();
 
-    if (!searchWord) return setFilteredData([]);
-    setFilteredData(newFilter);
-  };
-  console.log(filteredData);
-  // const clearInput = (): void => {
-  //   setFilteredData([]);
-  //   setWordEntered("");
-  //   inputRef.current?.focus();
-  // };
+    if (data.length >= 10) {
+      data.shift();
+    }
+
+    data.push(wordEntered);
+
+    localStorage.setItem('searchTerm', JSON.stringify(data))
+  }
+
+  useEffect(() => {
+    const data = getSearchHistoryFromStorage();
+    setSearchHistory(data);
+
+    setWordEntered(data[data.length - 1]);
+  }, [])
+
   return (
     <>
       <section className='section'>
-        <form className='search-form' onSubmit={onSubmit}>
+        <form className='search-form' 
+          onSubmit={handleSubmit}
+        >
           <div className='form-control'>
             <label htmlFor='name'>search a game</label>
             <input
@@ -56,25 +61,11 @@ const SearchForm: FC<IProps> = ({ data, }): JSX.Element => {
               name='name'
               id='name'
               value={wordEntered}
-              onChange={handleFilter}
-              // ref={inputRef}
+              onChange={handleChange}
               />
             </div>
           </form>
         </section>
-
-        {filteredData.map((game) => (
-          <div className='container'>
-              <h3 className='heading'>{game.title}</h3> 
-
-              <div className='cards'>
-                {filteredData.map((game) => {
-                  return <GameCard key={game.title}  items={game.items}/>
-                })}
-              </div>     
-          </div>
-              )
-         )}
 
       </>
   )

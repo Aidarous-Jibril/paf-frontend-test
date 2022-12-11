@@ -1,6 +1,4 @@
-import React from 'react'
 import { Item as Props } from '../home/Home';
-import './GameCard.css';
 
 interface ItemProps {
     items: Props[]
@@ -8,7 +6,6 @@ interface ItemProps {
 
 
 const GameCard: React.FC<ItemProps> = ({ items }) => {
-    // console.log(items);
   const renderList = (): JSX.Element[] => {
     return items.map(game => {
         return (
